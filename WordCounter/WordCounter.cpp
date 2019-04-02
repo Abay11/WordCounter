@@ -7,7 +7,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/thread.hpp>
 
-int const THREADS_COUNT = 4;
+static int const THREADS_COUNT = 4;
 
 using namespace std;
 
@@ -59,8 +59,30 @@ int main(int argc, char* argv[])
 	fs::path path(argv[1]);
 
 	vector<fs::path> files = getFilesList(path);
+
+	int files_per_thread = files.size() / THREADS_COUNT;
+
+	long res = 0;
+
+	for (int i = 0; i < THREADS_COUNT; ++i)
+	{
+		auto start = files.begin() + i * files_per_thread;
+
+		auto end = start;
+		if (i + 1 == THREADS_COUNT)
+			end = files.end();
+		else
+			end = files.begin() + (i + 1) * files_per_thread;
+
+		
+		res += getWordsCount(start, end);
+	}
 	
-	cout << "WORDS COUNT: " << getWordsCount(files.begin(), files.end());
+	cout << "WORDS COUNT (without division): " << getWordsCount(files.begin(), files.end()) << endl;
+
+	cout << "WORDS COUNT (with division): " << res << endl;
+
+
 
 	//for (auto& p : files)
 	//	cout << p << endl;
