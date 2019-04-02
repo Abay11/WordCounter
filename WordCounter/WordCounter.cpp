@@ -10,6 +10,8 @@
 int main(int argc, char* argv[])
 {
 	using namespace std;
+	
+	namespace fs = boost::filesystem;
 
 	if (argc < 2)
 	{
@@ -17,9 +19,13 @@ int main(int argc, char* argv[])
 		return -1;
 	}
 
-	string folderPath(argv[1]);
+	fs::path path(argv[1]);
 
-	cout << "Folder path: " << folderPath;
+	fs::recursive_directory_iterator iter(path);
+	
+	for (auto& p : iter)
+		if(fs::is_regular_file(p))
+			cout << p << endl;
 
 	return 0;
 }
