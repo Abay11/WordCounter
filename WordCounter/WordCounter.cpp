@@ -113,7 +113,7 @@ FilesVector getFilesList(fs::path& root)
 	fs::recursive_directory_iterator iter(root);
 
 	for (auto& p : iter)
-		if (fs::is_regular_file(p))
+		if (fs::is_regular_file(p) && fs::path(p).extension() == ".txt")
 			files.push_back(p);
 
 	return std::move(files);
