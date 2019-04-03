@@ -14,10 +14,36 @@ namespace fs = boost::filesystem;
 
 typedef std::vector<fs::path> FilesVector;
 
+typedef unsigned long long ullong;
+
 FilesVector getFilesList(fs::path& root);
 
-unsigned long getWordsCount(FilesVector::iterator begin,
+ullong getWordsCount(FilesVector::iterator begin,
 	FilesVector::iterator end);
+
+class MyHandler
+{
+public:
+	MyHandler(FilesVector::iterator begin, FilesVector::iterator end)
+		: begin(begin)
+		, end(end)
+	{
+		auto fut = async(std::launch::async, getWordsCount, begin, end);
+		result = fut.get();
+	}
+
+	ullong getResult()
+	{
+		return result;
+	}
+
+private:
+	FilesVector::iterator begin;
+	FilesVector::iterator end;
+
+	ullong result = 0;
+	//std::future<ullong> fut;
+};
 
 int main(int argc, char* argv[])
 {
@@ -48,7 +74,7 @@ int main(int argc, char* argv[])
 
 	unsigned long res = 0;
 
-	std::vector<std::future<unsigned long>> futures;
+	std::vector<std::future<ullong>> futures;
 
 	auto threading_start = chr::system_clock::now();
 
@@ -90,10 +116,10 @@ FilesVector getFilesList(fs::path& root)
 	return std::move(files);
 }
 
-unsigned long getWordsCount(FilesVector::iterator begin,
+ullong getWordsCount(FilesVector::iterator begin,
 	FilesVector::iterator end)
 {
-	unsigned long wordsCount = 0;
+	ullong wordsCount = 0;
 
 	for (auto it = begin; it != end; ++it)
 	{
