@@ -12,35 +12,12 @@ static int const THREADS_COUNT = 4;
 
 namespace fs = boost::filesystem;
 
-std::vector<fs::path> getFilesList(fs::path& root)
-{
-	std::vector<fs::path> files;
+typedef std::vector<fs::path> FilesVector;
 
-	fs::recursive_directory_iterator iter(root);
+FilesVector getFilesList(fs::path& root);
 
-	for (auto& p : iter)
-		if (fs::is_regular_file(p))
-			files.push_back(p);
-
-	return std::move(files);
-}
-
-unsigned long getWordsCount(std::vector<fs::path>::iterator begin,
-	std::vector<fs::path>::iterator end)
-{
-	unsigned long wordsCount = 0;
-
-	for (auto it = begin; it != end; ++it)
-	{
-		std::ifstream file(it->string());
-		
-		std::string in;
-		while (file >> in)
-			++wordsCount;
-	}
-
-	return wordsCount;
-}
+unsigned long getWordsCount(FilesVector::iterator begin,
+	FilesVector::iterator end);
 
 int main(int argc, char* argv[])
 {
@@ -55,15 +32,17 @@ int main(int argc, char* argv[])
 
 	fs::path path(path_arg);
 
-	std::vector<fs::path> files = getFilesList(path);
+	FilesVector files = getFilesList(path);
 
 	namespace chr = std::chrono;
 	
+	/*
 	std::cout << "---WITHOUT THREADING---\n";
 	auto simple_start = chr::system_clock::now();
 	std::cout << "WORDS COUNT: " << getWordsCount(files.begin(), files.end()) << std::endl;
 	auto simple_end = chr::system_clock::now();
 	std::cout << "ELAPSED: " << (simple_end - simple_start).count() << std::endl;
+	*/
 
 	int files_per_thread = files.size() / THREADS_COUNT;
 
@@ -96,4 +75,34 @@ int main(int argc, char* argv[])
 	std::cout << "ELAPSED: " << (threading_end - threading_start).count() << std::endl;
 
 	return 0;
+}
+
+FilesVector getFilesList(fs::path& root)
+{
+	std::vector<fs::path> files;
+
+	fs::recursive_directory_iterator iter(root);
+
+	for (auto& p : iter)
+		if (fs::is_regular_file(p))
+			files.push_back(p);
+
+	return std::move(files);
+}
+
+unsigned long getWordsCount(FilesVector::iterator begin,
+	FilesVector::iterator end)
+{
+	unsigned long wordsCount = 0;
+
+	for (auto it = begin; it != end; ++it)
+	{
+		std::ifstream file(it->string());
+		
+		std::string in;
+		while (file >> in)
+			++wordsCount;
+	}
+
+	return wordsCount;
 }
