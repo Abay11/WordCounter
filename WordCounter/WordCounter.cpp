@@ -3,13 +3,12 @@
 #include <string>
 #include <vector>
 #include <fstream>
+#include <future>
+#include <chrono>
 
 #include <boost/filesystem.hpp>
-#include <boost/thread.hpp>
 
 static int const THREADS_COUNT = 4;
-
-using namespace std;
 
 namespace fs = boost::filesystem;
 
@@ -26,19 +25,18 @@ std::vector<fs::path> getFilesList(fs::path& root)
 	return std::move(files);
 }
 
-long getWordsCount(std::vector<fs::path>::iterator begin,
+unsigned long getWordsCount(std::vector<fs::path>::iterator begin,
 	std::vector<fs::path>::iterator end)
 {
-	long wordsCount = 0;
+	unsigned long wordsCount = 0;
 
 	for (auto it = begin; it != end; ++it)
 	{
-		ifstream file(it->string());
+		std::ifstream file(it->string());
 		
-		string in;
+		std::string in;
 		while (file >> in)
 			++wordsCount;
-		
 	}
 
 	return wordsCount;
@@ -46,23 +44,34 @@ long getWordsCount(std::vector<fs::path>::iterator begin,
 
 int main(int argc, char* argv[])
 {
-	using namespace std;
-	
-	namespace fs = boost::filesystem;
-
+	std::string path_arg;
 	if (argc < 2)
 	{
-		cout << "Error! Need to set a folder path.";
-		return -1;
+		std::cout << "Enter folder path: ";
+		std::cin >> path_arg;
 	}
+	else
+		path_arg = argv[1];
 
-	fs::path path(argv[1]);
+	fs::path path(path_arg);
 
-	vector<fs::path> files = getFilesList(path);
+	std::vector<fs::path> files = getFilesList(path);
+
+	namespace chr = std::chrono;
+	
+	std::cout << "---WITHOUT THREADING---\n";
+	auto simple_start = chr::system_clock::now();
+	std::cout << "WORDS COUNT: " << getWordsCount(files.begin(), files.end()) << std::endl;
+	auto simple_end = chr::system_clock::now();
+	std::cout << "ELAPSED: " << (simple_end - simple_start).count() << std::endl;
 
 	int files_per_thread = files.size() / THREADS_COUNT;
 
-	long res = 0;
+	unsigned long res = 0;
+
+	std::vector<std::future<unsigned long>> futures;
+
+	auto threading_start = chr::system_clock::now();
 
 	for (int i = 0; i < THREADS_COUNT; ++i)
 	{
@@ -74,18 +83,17 @@ int main(int argc, char* argv[])
 		else
 			end = files.begin() + (i + 1) * files_per_thread;
 
-		
-		res += getWordsCount(start, end);
+		futures.push_back(async(std::launch::async, getWordsCount, start, end));
 	}
-	
-	cout << "WORDS COUNT (without division): " << getWordsCount(files.begin(), files.end()) << endl;
 
-	cout << "WORDS COUNT (with division): " << res << endl;
+	for (int i = 0; i < THREADS_COUNT; ++i)
+		res += futures[i].get();
 
+	auto threading_end = chr::system_clock::now();
 
-
-	//for (auto& p : files)
-	//	cout << p << endl;
+	std::cout << "\n---WITH THREADING---\n";
+	std::cout << "WORDS COUNT: " << res << std::endl;
+	std::cout << "ELAPSED: " << (threading_end - threading_start).count() << std::endl;
 
 	return 0;
 }
