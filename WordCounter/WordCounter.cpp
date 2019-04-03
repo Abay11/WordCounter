@@ -73,8 +73,6 @@ int main(int argc, char* argv[])
 
 	unsigned long res = 0;
 
-	//std::vector<std::future<ullong>> futures;
-
 	std::vector<MyHandler> handlers;
 
 	auto threading_start = chr::system_clock::now();
@@ -89,13 +87,11 @@ int main(int argc, char* argv[])
 		else
 			end = files.begin() + (i + 1) * files_per_thread;
 
-		//futures.push_back(async(std::launch::async, getWordsCount, start, end));
 		handlers.push_back(MyHandler(start, end));
 	}
 
 	for (int i = 0; i < THREADS_COUNT; ++i)
 		res += handlers[i].getResult();
-		//res += futures[i].get();
 
 	auto threading_end = chr::system_clock::now();
 
